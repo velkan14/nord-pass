@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager --install "platforms;android-37" "build-tools;36.0.0" "platform-tools"
+
+      - name: Decode release keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/signing"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/signing/release.jks"
+
+      - name: Build signed release APK
+        env:
+          NORD_PASS_KEYSTORE_PATH: ${{ runner.temp }}/signing/release.jks
+          NORD_PASS_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          NORD_PASS_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          NORD_PASS_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ./gradlew :app:assembleRelease --no-daemon \
+            -Pnordpass.versionCode="${{ github.run_number }}" \
+            -Pnordpass.versionName="$VERSION"
+
+      - name: Prepare release assets
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          APK_NAME="nord-pass-v${VERSION}.apk"
+          APK_PATH="app/build/outputs/apk/release/${APK_NAME}"
+          cp app/build/outputs/apk/release/app-release.apk "$APK_PATH"
+          sha256sum "$APK_PATH" > "${APK_PATH}.sha256"
+          {
+            echo "APK_PATH=$APK_PATH"
+            echo "APK_NAME=$APK_NAME"
+            echo "APK_SHA256=$(sha256sum "$APK_PATH" | cut -d' ' -f1)"
+            echo "VERSION=$VERSION"
+          } >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Nord Pass ${{ env.VERSION }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            ${{ env.APK_PATH }}
+            ${{ env.APK_PATH }}.sha256
+
+      - name: Update download page metadata on main
+        run: |
+          git fetch origin main
+          git checkout -B release-metadata origin/main
+          cat > docs/release.json <<EOF
+          {
+            "version": "${VERSION}",
+            "apk": "${APK_NAME}",
+            "sha256": "${APK_SHA256}",
+            "updated": "$(date -u +%Y-%m-%d)"
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/release.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: publish ${GITHUB_REF_NAME} download metadata"
+            git push origin release-metadata:main
+          fi

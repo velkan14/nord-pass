@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.Carnet" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Shown on cold start until the first session check has resolved. -->
+    <style name="Theme.Carnet.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Carnet</item>
+    </style>
+</resources>

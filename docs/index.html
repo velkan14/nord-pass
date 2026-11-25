@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nord Pass — download</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, -apple-system, sans-serif; }
+    body { max-width: 40rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; line-height: 1.55; }
+    h1 { margin-bottom: .25rem; }
+    .sub { color: #6b7280; margin-top: 0; }
+    a.button { display: block; text-align: center; background: #1d4ed8; color: #fff;
+      padding: .9rem 1rem; border-radius: .6rem; text-decoration: none; font-weight: 600;
+      margin: 1.5rem 0 .75rem; }
+    a.button:hover { background: #1e40af; }
+    .card { border: 1px solid #9ca3af55; border-radius: .75rem; padding: 1rem; margin: 1.25rem 0; }
+    code { word-break: break-all; font-size: .85rem; }
+    .qr { display: block; width: 180px; height: 180px; margin: 0 auto; }
+    li { margin: .35rem 0; }
+    small { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <h1>Nord Pass</h1>
+  <p class="sub">Your gym carnet as a QR code, on your phone.</p>
+
+  <a class="button" href="https://github.com/velkan14/nord-pass/releases/latest">
+    Download latest APK
+  </a>
+  <p style="text-align:center"><small id="meta">Loading release info…</small></p>
+
+  <div class="card">
+    <strong>Open this page on your phone</strong>
+    <img class="qr" src="qr.svg" alt="QR code for this download page">
+    <p style="text-align:center"><small>Scan to open Nord Pass on your device.</small></p>
+  </div>
+
+  <div class="card">
+    <strong>Install</strong>
+    <ol>
+      <li>Tap <em>Download latest APK</em> and open the downloaded file.</li>
+      <li>If Android blocks it, choose <em>Settings → Allow this source</em> (Install unknown apps), then try again.</li>
+      <li>Open <strong>Nord Pass</strong> and sign in with your gym credentials.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <strong>Verify the download</strong>
+    <p>The SHA-256 of the current APK is:</p>
+    <code id="sha">loading…</code>
+    <p><small>The APK is built from the public source at
+      <a href="https://github.com/velkan14/nord-pass">github.com/velkan14/nord-pass</a> and signed with the same key for every release.</small></p>
+  </div>
+
+  <div class="card">
+    <strong>Updates</strong>
+    <p>A sideloaded app does not update itself. Check this page for new versions, or add
+      <a href="https://github.com/velkan14/nord-pass">github.com/velkan14/nord-pass</a>
+      to <a href="https://github.com/Obtainium/Obtainium">Obtainium</a> and select
+      <code>dev.damado.nordpass</code> to be notified when a new release is published.</p>
+  </div>
+
+  <div class="card">
+    <strong>Privacy</strong>
+    <p>Nord Pass has no backend. Your gym username and session cookie are encrypted and
+      stored only on your device; the QR token is effectively a temporary gym key, so
+      treat screenshots of it as sensitive.</p>
+  </div>
+
+  <script>
+    fetch("release.json", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        document.getElementById("meta").textContent =
+          `Latest release: ${d.version} — ${d.apk} (updated ${d.updated})`;
+        document.getElementById("sha").textContent = d.sha256;
+      })
+      .catch(() => {
+        document.getElementById("meta").textContent =
+          "See the GitHub release page for the current version.";
+        document.getElementById("sha").textContent =
+          "Available on the release page.";
+      });
+  </script>
+</body>
+</html>
