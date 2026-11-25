@@ -32,8 +32,8 @@ jobs:
 
       - name: Install SDK packages
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager --install "platforms;android-37" "build-tools;36.0.0" "platform-tools"
+          yes 2>/dev/null | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager --install "platforms;android-37.0" "build-tools;36.0.0"
 
       - name: Decode release keystore
         env:
